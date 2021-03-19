@@ -1,1 +1,160 @@
+% ------------------------------------------------------------------------
+%  long-range XXZ model and out of time order correlator
+%  
+%  parameters:
+%    L                         = the size of the system    
+%    sigma_x, sigma_y, sigma_z = pauli matrix 
+%    alp                       = parameter describle the long range hopping
+%    J1                        = Z interaction
+%    J                         = long range XX interaction 
+%    J2                        = nearest XX interaction
+%    beta                      =  1/(k_B T)
+%    W                         = the strength of the disorder
+% ------------------------------------------------------------------------
 
+
+clear all;
+clc;
+
+L=10;
+I=[1,0;0,1];
+sigma_x=[0,1;1,0];
+sigma_y=[0,-i;i,0];
+sigma_z=[1,0;0,-1];
+
+sigma_p=(sigma_x+i*sigma_y)/2;
+sigma_n=(sigma_x-i*sigma_y)/2;
+
+J1=1;J=1;alp=0;beta=0;W=0;phi=0;J2=0;
+
+%Hamiltonian  
+disorder=A_Adisorder(W,L,phi);
+H=disorder(1)*sigma_z;
+for i=2:L
+   H=kron(H,eye(2));
+   H=H+disorder(i)*kron(eye(2^(i-1)),sigma_z);
+   for j=1:i-1
+      H=H+J*abs(i-j)^(-alp)*kron(eye(2^(j-1)),kron(sigma_p,kron(eye(2^(i-j-1)),sigma_n)))+J*abs(i-j)^(-alp)*kron(eye(2^(j-1)),kron(sigma_n,kron(eye(2^(i-j-1)),sigma_p)));
+   end
+   H=H+J1*kron(eye(2^(i-2)),kron(sigma_z,sigma_z)); 
+   H=H+J2*kron(eye(2^(i-2)),kron(sigma_x,sigma_x));
+   H=H+J2*kron(eye(2^(i-2)),kron(sigma_x,sigma_x));
+end
+
+%eigenstate entanglement entropy
+[vt,E]=eig(H);
+K=Eee(vt,L,1);
+k=sum(K)/length(K)
+
+
+
+
+function [D]=A_Adisorder(Lambda,L,phi)
+% ------------------------------------------------------------------------
+% corstruct a disorder potential with the form in AA model
+% 
+% parameter:
+%      L      = the system of the size
+%      Lambda = the strength of the disorder
+%      phi    = the phase in the disorder
+% result
+%      D      = disorder potential 
+% ------------------------------------------------------------------------
+    omega=(sqrt(5)-1)/2;
+    D=Lambda*cos(2*pi*omega*linspace(1,L,L)+phi);
+end
+
+function [D]=Adisorder(Lambda,L)
+% ------------------------------------------------------------------------
+% corstruct a disorder potential with the form in Anderson model
+% 
+% parameter:
+%      L      = the system of the size
+%      Lambda = the strength of the disorder
+% result
+%      D      = disorder potential 
+% ------------------------------------------------------------------------
+   D=Lambda*(2*rand(1,L)-1);
+end
+
+function [Et]=Eee(Vt,L,p)
+% ------------------------------------------------------------------------
+% calculate the eigenstate entanglemnt entropy
+% 
+% parameter:
+%      Vt      = eigenstates in the fock space
+%      p       = if you need a picture,p=1
+%      L       = the size of the system
+% result
+%      D       =  eigenstate entanglemnt entropy
+% ------------------------------------------------------------------------
+    Et=[];
+for i=1:2^L
+    psi=Vt(:,i);
+    Entropy=[];
+    alpha=zeros(2^(L/2),2^(L/2));
+    for i=1:2^(L/2)
+        for j=1:2^(L/2)
+           alpha(i,j)=psi((i-1)*2^(L/2)+j,1); 
+        end 
+    end
+    %SVDf  
+    [S,V0,D]=svd(alpha); 
+    V=diag(V0).*(diag(V0));
+    entropy=-V'*log(V);
+    Entropy=[Entropy,entropy];
+    et=sum(Entropy)/length(Entropy);
+    Et=[Et,et];
+end
+    if p==1
+       figure()
+       plot(Et,'.')
+end
+end
+
+function []=otoc()
+% ------------------------------------------------------------------------
+% calculate the eigenstate entanglemnt entropy
+% 
+% parameter:
+%      Vt      = eigenstates in the fock space
+%      p       = if you need a picture,p=1
+%      L       = the size of the system
+% result
+%      D       =  eigenstate entanglemnt entropy
+% ------------------------------------------------------------------------
+    data=zeros(1,L-1);
+    LLc=[];
+    for j=2:L
+       % j=2;
+        sigmazj=kron(eye(2^(j-1)),kron(sigma_z,eye(2^(L-j))));
+        sigma1z=kron(sigma_z,eye(2^(L-1)));
+
+        W=sigmazj;V=sigma1z;
+
+        %time evolution
+        t=0.1;
+        T=0:t:3;
+        clear i;
+        U=expm(-i*H*t);
+        U1=expm(i*H*t);
+        llc=[];
+        for l=1:length(T)   
+            W=U1*W*U;
+            OOt=(1+real(W'*V'*W*V))/2;
+            Otaverage=trace(expm(-beta*H)*OOt)/trace(expm(-beta*H));        
+            llc=[llc,Otaverage];
+        end
+        LLc=[LLc;llc];
+    end
+
+    % plot
+    X=linspace(2,L,L-1);
+    Y=T;
+    surf(Y,X,LLc)
+    colorbar
+    xlabel('site')
+    ylabel('t')
+    title('OTOC,lambda=0,W=0')
+
+end
