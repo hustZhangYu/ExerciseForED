@@ -1,2 +1,4 @@
 # spin-system
-some models in spin 1/2 system
+Generalized XXZ \
+code1: https://www.yu.edu/faculty-bios/santos/computer-codes
+
