@@ -1,0 +1,168 @@
+% 一维spin1/2系统
+% 写出体系大小为L的spin1/2链的‘Site-basis’。spin up_(1),spin down_(0)
+clc;
+clear all;
+
+%%
+L=6;
+Size=2^L;
+basis=zeros(Size,L);
+for i=1:Size
+    t=i-1;
+    for j=1:L
+        basis(i,j)=(t-mod(t,2^(L-j)))/2^(L-j);
+        t=mod(t,2^(L-j));
+    end
+end
+
+
+%%
+%Exercise1-产生总自旋朝上为N的态
+
+clear all;
+clc;
+L=6;
+N=3;
+dim=factorial(L)/(factorial(N)*factorial(L-N))
+
+onebasisvector=zeros(1,L);
+onebasisvector(1,1:3)=1;
+
+basis=zeros(L,dim);
+%matlab 似乎没有找到类似可以重排，且区分相同元素的方法
+%利用unique去除掉相同的行。
+basis=unique(perms(onebasisvector),'row');
+
+
+
+%%
+%Exercise2-伊辛模型的哈密顿量
+clear all;
+clc;
+L=6;
+N=3;
+J=1;%相互作用项
+dim=factorial(L)/(factorial(N)*factorial(L-N));
+
+onebasisvector=zeros(1,L);
+onebasisvector(1,1:3)=1;
+basis=unique(perms(onebasisvector),'row');
+
+Ham=zeros(dim,dim);
+for i=1:dim
+    for j=1:L-1
+       Ham(i,i)=Ham(i,i)+J*(-1)^(basis(i,j)+basis(i,j+1))/4; 
+    end
+    Ham(i,i)=J*(-1)^(basis(i,L)+basis(i,1))/4;%PBC情况，OBC只需将其注释掉。   
+end
+diag(Ham)
+
+
+%%
+%Exercise3
+%(i)-写下OBC XXZ模型的哈密顿量，其中L=6,N_up=3,Delta=0.4
+clear all;
+clc;
+L=6;N=3;Delta=0.4;J=1;
+dim=factorial(L)/(factorial(N)*factorial(L-N));
+
+onebasisvector=zeros(1,L);
+onebasisvector(1,1:3)=1;
+basis=unique(perms(onebasisvector),'row');
+
+%这里说一下主要对比思路，寻找有2个位点不同的两个本征态。
+Ham=zeros(dim,dim);
+count=0;
+for i=1:dim-1
+    for j=i+1:dim
+        tot=0;
+        Differentsite=zeros(1,dim);    
+        for k=1:L
+            if basis(i,k)~=basis(j,k)
+                tot=tot+1;
+                Differentsite(tot)=k;
+            end
+        end
+        
+        if tot==2  
+           if abs(Differentsite(1)-Differentsite(2))==1
+              Ham(i,j)=J/2;
+              Ham(j,i)=Ham(i,j);
+           end
+        end
+    end
+end
+for i=1:dim
+    for j=1:L-1
+       Ham(i,i)=Ham(i,i)+Delta*J*(-1)^(basis(i,j)+basis(i,j+1))/4; 
+    end   
+end
+
+%(ii)-求解本征态和本征值
+[Eigenvectors,Eigenvalues1]=eig(Ham);
+Eigenvalues=diag(Eigenvalues1);
+
+%（iii）-宇称算符与沿x轴旋转pi
+
+%宇称算符（分为奇宇称，偶宇称）
+%宇称是将某个本征态沿某一侧反转，我们找到前后对应态，比对系数。
+pair=zeros(1,dim);
+for i=1:dim
+    for j=1:dim
+       s1=1;
+       for k=1:L
+          if basis(i,k)~=basis(j,L-k+1)
+              s1=0;
+          end
+       end
+    if s1==1
+       pair(i)=j;
+    end
+    end
+end
+
+Peigenvalues=zeros(1,dim);
+
+for i=1:dim
+    sum=0; 
+    for j=1:dim
+    sum=sum+(Eigenvectors(j,i)+Eigenvectors(pair(j),i))^2/4;
+    end
+    if sum<0.001
+        Peigenvalues(i)=-1;
+    else
+        Peigenvalues(i)=1;
+    end
+end
+% Peigenvalues
+
+%沿x轴旋转pi
+pair=zeros(1,dim);
+for i=1:dim
+    for j=1:dim
+       s1=1;
+       for k=1:L
+          if basis(i,k)~=abs(basis(j,k)-1)
+              s1=0;
+          end
+       end
+       if s1==1
+          pair(i)=j;
+       end
+    end
+end
+
+Geigenvalues=zeros(1,dim);
+
+for i=1:dim
+    sum=0; 
+    for j=1:dim
+    sum=sum+(Eigenvectors(j,i)+Eigenvectors(pair(j),i))^2/4;
+    end
+    if sum<0.001
+        Geigenvalues(i)=-1;
+    else
+        Geigenvalues(i)=1;
+    end
+end
+Geigenvalues
