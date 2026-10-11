@@ -15,8 +15,8 @@ H[L,L]=F*L
 
 E,Ev=eigen(H)
 
-# Select a particular eigenvector (e.g., 100th)
-psi = Ev[50, :]
+# Select eigenvector 50; eigen(H) stores eigenvectors in columns.
+psi = Ev[:, 50]
 
 # Plot the probability distribution |ψ|^2
 plot(1:L, psi .* conj(psi), 
@@ -35,3 +35,4 @@ plot(1:L, psi .* conj(psi),
 
 # Save the figure
 savefig("plot1.png")
+
