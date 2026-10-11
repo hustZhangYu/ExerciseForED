@@ -21,8 +21,8 @@ H[L, L] = lambda * cos(2 * π * omega * L + phi)
 # Eigenvalues and eigenvectors
 E, Ev = eigen(H)
 
-# Select a particular eigenvector (e.g., 100th)
-psi = Ev[100, :]
+# Select eigenvector 100; eigen(H) stores eigenvectors in columns.
+psi = Ev[:, 100]
 
 # Plot the probability distribution |ψ|^2
 plot(1:L, psi .* conj(psi), 
@@ -41,3 +41,5 @@ plot(1:L, psi .* conj(psi),
 
 # Save the figure
 savefig("plot.png")
+
+

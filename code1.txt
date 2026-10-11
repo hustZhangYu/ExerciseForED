@@ -53,7 +53,7 @@ for i=1:dim
     for j=1:L-1
        Ham(i,i)=Ham(i,i)+J*(-1)^(basis(i,j)+basis(i,j+1))/4; 
     end
-    Ham(i,i)=J*(-1)^(basis(i,L)+basis(i,1))/4;%PBC情况，OBC只需将其注释掉。   
+    Ham(i,i)=Ham(i,i)+J*(-1)^(basis(i,L)+basis(i,1))/4;%PBC情况，OBC只需将其注释掉。   
 end
 diag(Ham)
 
@@ -166,3 +166,5 @@ for i=1:dim
     end
 end
 Geigenvalues
+
+
